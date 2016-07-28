@@ -109,11 +109,6 @@
       <HintPath>Library\FISCA.UDT.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="JHSchool.Data, Version=2.0.0.2, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>Library\JHSchool.Data.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="K12.Data, Version=1.0.2.13, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\K12.Data.dll</HintPath>
@@ -122,11 +117,6 @@
     <Reference Include="K12.Presentation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\K12.Presentation.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="SHSchool.Data, Version=2.0.0.2, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>Library\SHSchool.Data.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SmartSchool.ErrorReporting, Version=1.0.2.3, Culture=neutral, processorArchitecture=MSIL">

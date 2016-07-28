@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ExamScoreCardReaderV2.Model;
-using JHSchool.Data;
+using K12.Data;
 
 namespace ExamScoreCardReaderV2.Validation.RecordValidators
 {
@@ -21,7 +21,7 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
         {
             string studentNumber = record.StudentNumber;
             List<string> subjects = new List<string>(record.Subjects);
-            foreach (JHCourseRecord course in _studentCourseInfo.GetCourses(record.StudentNumber))
+            foreach (CourseRecord course in _studentCourseInfo.GetCourses(record.StudentNumber))
                 subjects.Remove(course.Subject);
 
             if (subjects.Count > 0)

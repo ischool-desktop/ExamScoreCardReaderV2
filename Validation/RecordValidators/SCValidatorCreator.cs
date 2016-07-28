@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ExamScoreCardReaderV2.Model;
-using JHSchool.Data;
+using K12.Data;
 
 namespace ExamScoreCardReaderV2.Validation.RecordValidators
 {
@@ -11,7 +11,7 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
     {
 
         private StudentNumberDictionary _studentDict;
-        private Dictionary<string, JHCourseRecord> _courseDict;
+        private Dictionary<string, CourseRecord> _courseDict;
         private StudentCourseInfo _studentCourseInfo;
         private List<string> _attendCourseIDs;
 
@@ -20,14 +20,14 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
 
         public List<string> AttendCourseIDs { get { return _attendCourseIDs; } }
 
-        public SCValidatorCreator(List<JHStudentRecord> studentList, List<JHCourseRecord> courseList, List<JHSCAttendRecord> scaList)
+        public SCValidatorCreator(List<StudentRecord> studentList, List<CourseRecord> courseList, List<SCAttendRecord> scaList)
         {
             _studentDict = new StudentNumberDictionary();
-            _courseDict = new Dictionary<string, JHCourseRecord>();
+            _courseDict = new Dictionary<string, CourseRecord>();
             _studentCourseInfo = new StudentCourseInfo();
             _attendCourseIDs = new List<string>();
 
-            foreach (JHStudentRecord student in studentList)
+            foreach (StudentRecord student in studentList)
             {
                 string studentNumber = student.StudentNumber;
 
@@ -39,7 +39,7 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
                 _studentCourseInfo.Add(student);
             }
 
-            foreach (JHCourseRecord course in courseList)
+            foreach (CourseRecord course in courseList)
             {
                 if (!_courseDict.ContainsKey(course.ID))
                     _courseDict.Add(course.ID, course);
@@ -48,8 +48,8 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
             //Linq
             var student_ids = from student in studentList select student.ID;
 
-            //foreach (JHSCAttendRecord sc in JHSCAttend.Select(student_ids.ToList<string>(), null, null, "" + schoolYear, "" + semester))
-            foreach (JHSCAttendRecord sc in scaList)
+            //foreach (SCAttendRecord sc in SCAttend.Select(student_ids.ToList<string>(), null, null, "" + schoolYear, "" + semester))
+            foreach (SCAttendRecord sc in scaList)
             {
                 if (!_studentCourseInfo.ContainsID(sc.RefStudentID)) continue;
                 if (!_courseDict.ContainsKey(sc.RefCourseID)) continue;
@@ -90,17 +90,17 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
     internal class StudentCourseInfo
     {
         private Dictionary<string, string> studentNumberTable; //StudentNumber -> ID
-        private Dictionary<string, JHStudentRecord> studentTable; //ID -> Record
-        private Dictionary<string, List<JHCourseRecord>> courseTable; //ID -> List of CourseRecord
+        private Dictionary<string, StudentRecord> studentTable; //ID -> Record
+        private Dictionary<string, List<CourseRecord>> courseTable; //ID -> List of CourseRecord
 
         public StudentCourseInfo()
         {
             studentNumberTable = new Dictionary<string, string>();
-            studentTable = new Dictionary<string, JHStudentRecord>();
-            courseTable = new Dictionary<string, List<JHCourseRecord>>();
+            studentTable = new Dictionary<string, StudentRecord>();
+            courseTable = new Dictionary<string, List<CourseRecord>>();
         }
 
-        internal void Add(JHStudentRecord student)
+        internal void Add(StudentRecord student)
         {
             if (string.IsNullOrEmpty(student.StudentNumber)) return;
 
@@ -111,7 +111,7 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
             if (!studentTable.ContainsKey(student.ID))
                 studentTable.Add(student.ID, student);
             if (!courseTable.ContainsKey(student.ID))
-                courseTable.Add(student.ID, new List<JHCourseRecord>());
+                courseTable.Add(student.ID, new List<CourseRecord>());
         }
 
         internal bool ContainsID(string id)
@@ -119,17 +119,17 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
             return studentTable.ContainsKey(id);
         }
 
-        internal void AddCourse(string student_id, JHCourseRecord course)
+        internal void AddCourse(string student_id, CourseRecord course)
         {
             if (!courseTable.ContainsKey(student_id)) return;
             courseTable[student_id].Add(course);
         }
 
-        internal IEnumerable<JHCourseRecord> GetCourses(string sn)
+        internal IEnumerable<CourseRecord> GetCourses(string sn)
         {
-            if (!studentNumberTable.ContainsKey(sn)) return new List<JHCourseRecord>();
+            if (!studentNumberTable.ContainsKey(sn)) return new List<CourseRecord>();
             string id = studentNumberTable[sn];
-            if (!studentTable.ContainsKey(id)) return new List<JHCourseRecord>();
+            if (!studentTable.ContainsKey(id)) return new List<CourseRecord>();
 
             return courseTable[id];
         }
@@ -150,5 +150,5 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
         }
     }
 
-    internal class StudentNumberDictionary : Dictionary<string, JHStudentRecord> { }
+    internal class StudentNumberDictionary : Dictionary<string, StudentRecord> { }
 }

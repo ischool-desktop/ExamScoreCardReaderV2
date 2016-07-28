@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ExamScoreCardReaderV2.Model;
-using JHSchool.Data;
+using K12.Data;
 
 namespace ExamScoreCardReaderV2.Validation.RecordValidators
 {
@@ -12,19 +12,19 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
         private StudentCourseInfo _studentCourseInfo;
         private Dictionary<string, List<string>> _aeTable;
 
-        public CourseExamValidator(StudentCourseInfo studentCourseInfo, List<JHAEIncludeRecord> aeList, List<JHExamRecord> examList)
+        public CourseExamValidator(StudentCourseInfo studentCourseInfo, List<AEIncludeRecord> aeList, List<ExamRecord> examList)
         {
             _studentCourseInfo = studentCourseInfo;
             _aeTable = new Dictionary<string, List<string>>();
 
             Dictionary<string, string> examNames = new Dictionary<string, string>();
-            foreach (JHExamRecord exam in examList)
+            foreach (ExamRecord exam in examList)
             {
                 if (!examNames.ContainsKey(exam.ID))
                     examNames.Add(exam.ID, exam.Name);
             }
 
-            foreach (JHAEIncludeRecord ae in aeList)
+            foreach (AEIncludeRecord ae in aeList)
             {
                 if (!_aeTable.ContainsKey(ae.RefAssessmentSetupID))
                     _aeTable.Add(ae.RefAssessmentSetupID, new List<string>());
@@ -37,14 +37,14 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
 
         public string Validate(DataRecord record)
         {
-            List<JHCourseRecord> courses = new List<JHCourseRecord>();
-            foreach (JHCourseRecord course in _studentCourseInfo.GetCourses(record.StudentNumber))
+            List<CourseRecord> courses = new List<CourseRecord>();
+            foreach (CourseRecord course in _studentCourseInfo.GetCourses(record.StudentNumber))
             {
                 if (record.Subjects.Contains(course.Subject))
                     courses.Add(course);
             }
             StringBuilder builder = new StringBuilder("");
-            foreach (JHCourseRecord course in courses)
+            foreach (CourseRecord course in courses)
             {
                 if (string.IsNullOrEmpty(course.RefAssessmentSetupID))
                     builder.AppendLine(string.Format("課程「{0}」沒有評量設定。", course.Name));
