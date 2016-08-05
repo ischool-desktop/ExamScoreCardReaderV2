@@ -185,7 +185,7 @@
             // pic
             // 
             this.pic.BackColor = System.Drawing.Color.Transparent;
-            this.pic.Image = global::ExamScoreCardReaderV2.Properties.Resources.loading;
+            //this.pic.Image = global::ExamScoreCardReaderV2.Properties.Resources.loading;
             this.pic.Location = new System.Drawing.Point(13, 142);
             this.pic.Name = "pic";
             this.pic.Size = new System.Drawing.Size(32, 32);

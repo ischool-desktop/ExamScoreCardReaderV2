@@ -18,6 +18,11 @@ namespace ExamScoreCardReaderV2.Validation
         private const string formatB = @"^([\d|\s]{";
 
         private const string formatE = @"})\s*([\d|\s]{3})\d{2}([\d|\s]{2})([\d|\s]{5})(([\d| ]\d{2}| [\d| ]\d)\.\d{2})$";
+
+        // 2016/8/5 穎驊修正 上面那個formatE 的問題，注意其第二項([\d|\s]{2}) 沒有用()包起來，會使得後面判斷m.group 漏掉"座號"，造成錯誤
+        //private const string formatE = @"})\s*([\d|\s]{3})([\d|\s]{2})([\d|\s]{2})([\d|\s]{5})(([\d| ]\d{2}| [\d| ]\d)\.\d{2})$";
+        //2016/8/5 後來還是改回原本的，因為發現改了設定會造成其他驗證錯誤(EX 讀錯科目代碼) 要改還要研究其他的驗證功能，有點太大，恩正說先改回來
+
         private const string format2 = @"^%(.*):(\d+)%(.*)";
 
         //範例:   3350011 301 01 02 90001 78.45
@@ -40,6 +45,11 @@ namespace ExamScoreCardReaderV2.Validation
             // 加這檢查主要處理匯入檔案內學號被不同班級座號重複使用
             Dictionary<string, List<string>> CheckStudNumberClassSeatNoDict = new Dictionary<string, List<string>>();
 
+
+            //2016/8/5 穎驊新增 加這檢查主要處理匯入檔案內同一班級座號被不同學號重複使用
+            Dictionary<string, List<string>> CheckClassSeat_StudNumberNoDict = new Dictionary<string, List<string>>();
+
+
             Dictionary<int, string> lineIndexes = new Dictionary<int, string>();
             List<int> errorFormatLineIndexes = new List<int>();
             List<int> duplicateLineIndexes = new List<int>();
@@ -57,6 +67,8 @@ namespace ExamScoreCardReaderV2.Validation
                     if (m.Success) //格式正確
                     {
                         //學號{7}，班級{3}，座號{2}，試別{2}，科目{5}
+                        
+                        //2016/8/5 穎驊註解，剛剛發現程式會遺漏掉座號，可以在這邊檢查每一個Value 是否是對的
                         string key = m.Groups[1].Value + m.Groups[2].Value + m.Groups[3].Value + m.Groups[4].Value + m.Groups[5].Value;
 
                         // 學號
@@ -70,9 +82,24 @@ namespace ExamScoreCardReaderV2.Validation
                         if (!CheckStudNumberClassSeatNoDict[key1].Contains(value1))
                             CheckStudNumberClassSeatNoDict[key1].Add(value1);
 
+                        //2016/8/5 後來還是改回原本的，因為發現改了設定會造成其他驗證錯誤(EX 讀錯科目代碼) 要改還要研究其他的驗證功能，有點太大，恩正說先改回來
+                        //if (!CheckClassSeat_StudNumberNoDict.ContainsKey(value1))
+                        //    CheckClassSeat_StudNumberNoDict.Add(value1, new List<string>());
+
+                        //if (!CheckClassSeat_StudNumberNoDict[value1].Contains(key1))
+                        //    CheckClassSeat_StudNumberNoDict[value1].Add(key1);
+
+
+
                         if (!uniqueCounter.ContainsKey(key))
+                        {
                             uniqueCounter.Add(key, new List<int>());
-                        uniqueCounter[key].Add(index);
+                            uniqueCounter[key].Add(index);
+                        }
+                        ////2016/8/5 穎驊註解， 重覆的話，幫你多加一筆index 資料，後面就會偵錯是否有>1筆表示重覆的錯誤，順帶一提 index 代表記事本的行數，index 1給 lineIndexes做表頭， index = 2 事實上等於記事本第1行
+                        else {
+                            uniqueCounter[key].Add(index);                        
+                        }
                     }
                     else if (!string.IsNullOrEmpty(line.Trim())) //非空白行則錯誤
                         errorFormatLineIndexes.Add(index);
@@ -153,6 +180,27 @@ namespace ExamScoreCardReaderV2.Validation
                 }
                 errorIdx++;
             }
+
+            //2016/8/5 後來還是改回原本的，因為發現改了設定會造成其他驗證錯誤(EX 讀錯科目代碼) 要改還要研究其他的驗證功能，有點太大，恩正說先改回來
+            ////座號 被不同人使用
+            //int errorIdx_for_CheckClassSeat = 2;
+            //foreach (KeyValuePair<string, List<string>> data in CheckClassSeat_StudNumberNoDict)
+            //{
+            //    if (data.Value.Count > 1)
+            //    {
+            //        error = true;
+            //        errorFormatLineIndexes.Add(errorIdx_for_CheckClassSeat);
+            //        string msg = " (班級座號：" + data.Key + ", 有2位學生使用，請檢查!)";
+
+            //        if (lineIndexes.ContainsKey(errorIdx))
+            //            lineIndexes[errorIdx_for_CheckClassSeat] += msg;
+            //        else
+            //            lineIndexes.Add(errorIdx_for_CheckClassSeat, msg);
+
+            //    }
+            //    errorIdx_for_CheckClassSeat++;
+            //}
+
 
             ValidateTextResult result = new ValidateTextResult();
 

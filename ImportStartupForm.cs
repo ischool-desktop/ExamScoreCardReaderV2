@@ -33,13 +33,17 @@ namespace ExamScoreCardReaderV2
 
         private List<FileInfo> _files;
         private List<SCETakeRecord> _addScoreList;
-        private List<SCETakeRecord> _deleteScoreList;
+        private List<SCETakeRecord> _existedScoreList;
         private Dictionary<string, SCETakeRecord> AddScoreDic;
         private Dictionary<string, string> examDict;
 
         private Dictionary<string, SCETakeRecord> dicAddScore_Raw;
         private Dictionary<string, SCETakeRecord> dicUpdateScore;
         private List<SCETakeRecord> _addScoreList_Upload;
+
+        // 2016/8/4 穎驊新增，紀錄該課程ID是否有子成績
+        public Dictionary<String, bool> CoursesWithSubScore = new Dictionary<string, bool>();
+
 
         StringBuilder sbLog { get; set; }
         /// <summary>
@@ -55,7 +59,7 @@ namespace ExamScoreCardReaderV2
         //高中系統努力程度已無使用
         //private EffortMapper _effortMapper;
 
-        double counter = 0; //上傳成績時，算筆數用的。
+        int counter = 0; //上傳成績時，算筆數用的。
 
         /// <summary>
         /// 載入學號長度值
@@ -117,11 +121,11 @@ namespace ExamScoreCardReaderV2
 
             _worker = new BackgroundWorker();
             _worker.WorkerReportsProgress = true;
-            _worker.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
+            _worker.ProgressChanged += delegate(object sender, ProgressChangedEventArgs e)
             {
                 lblMessage.Text = "" + e.UserState;
             };
-            _worker.DoWork += delegate (object sender, DoWorkEventArgs e)
+            _worker.DoWork += delegate(object sender, DoWorkEventArgs e)
             {
                 #region Worker DoWork
                 _worker.ReportProgress(0, "訊息：檢查讀卡文字格式…");
@@ -189,7 +193,7 @@ namespace ExamScoreCardReaderV2
                 //List<SCAttendRecord> scaList2 = SCAttend.SelectByStudentIDAndCourseID(s_ids, c_ids.ToList<string>());
                 List<SCAttendRecord> scaList = new List<SCAttendRecord>();
                 FunctionSpliter<string, SCAttendRecord> spliter = new FunctionSpliter<string, SCAttendRecord>(300, 3);
-                spliter.Function = delegate (List<string> part)
+                spliter.Function = delegate(List<string> part)
                 {
                     return SCAttend.Select(part, c_ids.ToList<string>(), null, SchoolYear.ToString(), Semester.ToString());
                 };
@@ -243,7 +247,7 @@ namespace ExamScoreCardReaderV2
 
                 _worker.ReportProgress(65, "訊息：取得學生評量成績…");
 
-                _deleteScoreList.Clear();
+                _existedScoreList.Clear();
                 _addScoreList.Clear();
                 AddScoreDic.Clear();
 
@@ -254,7 +258,7 @@ namespace ExamScoreCardReaderV2
 
                 Dictionary<string, SCETakeRecord> sceList = new Dictionary<string, SCETakeRecord>();
                 FunctionSpliter<string, SCETakeRecord> spliterSCE = new FunctionSpliter<string, SCETakeRecord>(300, 3);
-                spliterSCE.Function = delegate (List<string> part)
+                spliterSCE.Function = delegate(List<string> part)
                 {
                     return SCETake.Select(null, null, null, null, part);
                 };
@@ -297,7 +301,7 @@ namespace ExamScoreCardReaderV2
                         string key = GetCombineKey(student.ID, course.ID, exam.ID);
 
                         if (sceList.ContainsKey(key))
-                            _deleteScoreList.Add(sceList[key]);
+                            _existedScoreList.Add(sceList[key]);
 
                         SCETakeRecord sh = new SCETakeRecord();
                         sh.RefCourseID = course.ID;
@@ -305,7 +309,64 @@ namespace ExamScoreCardReaderV2
                         sh.RefSCAttendID = scaTable[GetCombineKey(student.ID, course.ID)].ID;
                         sh.RefStudentID = student.ID;
 
-                        sh.SetScore(dr.Score, Global.StudentDocRemove);
+                        String CoursesWithSubScore_Key = sh.RefCourseID + "_" + sh.RefExamID;
+
+                        if (!CoursesWithSubScore.ContainsKey(CoursesWithSubScore_Key))
+                        {
+                            string strSQL_course = "SELECT * FROM course WHERE id =" + sh.RefCourseID;
+
+                            FISCA.Data.QueryHelper qh = new FISCA.Data.QueryHelper();
+
+                            System.Data.DataTable dt_course = qh.Select(strSQL_course);
+
+
+                            XmlDocument doc1 = new XmlDocument();
+
+                            string strXml = "" + dt_course.Rows[0]["Extensions"];
+
+                            if (strXml != "")
+                            {
+                                doc1.LoadXml(strXml);
+                            }
+
+                            //指定 ele 為 Xmldocument doc1 的Element
+                            XmlElement ele = doc1.DocumentElement;
+
+                            if (ele != null)
+                            {
+                                XmlElement eleGradeItemExtension = ele.SelectSingleNode("Extension[@Name='GradeItemExtension']") as XmlElement;
+
+                                // eleGradeItemExtension 有可能會=null， 代表原本Extensions欄位有其他奇怪的東西(EX: <Abbbbbs><Abbbbb>aaaa</Abbbbb></Abbbbbs>) 而通過第一關ele != null 的檢驗
+                                if (eleGradeItemExtension != null)
+                                {
+                                    XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + sh.RefExamID + "'" + "]") as XmlElement;
+
+                                    // 
+                                    if (eleGradeItem != null)
+                                    {
+                                        CoursesWithSubScore.Add(CoursesWithSubScore_Key, true);
+                                    }
+                                    //eleGradeItem  = null 代表你Extensions 裡面本科本次考試沒有子成績的設定，判定該科目本次考試沒有子成績
+                                    else
+                                    {
+                                        CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                                    }
+                                }
+                                //eleGradeItemExtension  = null 代表你Extensions 裡面沒有任何一科子成績的設定，判定該科目本次考試沒有子成績
+                                else
+                                {
+                                    CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                                }
+                            }
+                            //ele  = null 代表你Extensions 裡面甚麼都沒有，判定該科目本次考試沒有子成績
+                            else
+                            {
+                                CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                            }
+                        }
+
+
+                        sh.SetScore(dr.Score, Global.StudentDocRemove, CoursesWithSubScore);
 
 
                         ////轉型Double再轉回decimal,可去掉小數點後的0
@@ -345,7 +406,7 @@ namespace ExamScoreCardReaderV2
                 e.Result = null;
                 #endregion
             };
-            _worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
+            _worker.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e)
             {
                 #region Worker Completed
                 if (e.Error == null && e.Result == null)
@@ -353,7 +414,7 @@ namespace ExamScoreCardReaderV2
                     if (!_upload.IsBusy)
                     {
                         //如果學生身上已有成績，則提醒使用者
-                        if (_deleteScoreList.Count > 0)
+                        if (_existedScoreList.Count > 0)
                         {
                             _warn.RunWorkerAsync();
                         }
@@ -403,7 +464,7 @@ namespace ExamScoreCardReaderV2
 
             _warn = new BackgroundWorker();
             _warn.WorkerReportsProgress = true;
-            _warn.DoWork += delegate (object sender, DoWorkEventArgs e)
+            _warn.DoWork += delegate(object sender, DoWorkEventArgs e)
             {
                 _warn.ReportProgress(0, "產生警告訊息...");
 
@@ -416,7 +477,7 @@ namespace ExamScoreCardReaderV2
 
                 WarningForm form = new WarningForm();
                 int count = 0;
-                foreach (SCETakeRecord sce in _deleteScoreList)
+                foreach (SCETakeRecord sce in _existedScoreList)
                 {
                     // 當成績資料是空值跳過
                     //if (sce.GetScore().HasValue == false && sce.Effort.HasValue == false && string.IsNullOrEmpty(sce.Text))
@@ -440,19 +501,19 @@ namespace ExamScoreCardReaderV2
 
                     if (AddScoreDic.ContainsKey(scoreName))
                     {
-                        form.AddMessage(student.ID, s, string.Format("學生在「{0}」課程「{1}」中已有成績「{2}」將修改為「{3}」。", course.Name, exam, sce.GetScore(), AddScoreDic[scoreName].GetScore()));
+                        form.AddMessage(student.ID, s, string.Format("學生在「{0}」課程「{1}」中已有讀卡成績「{2}」將修改為「{3}」。", course.Name, exam, sce.GetScore(), AddScoreDic[scoreName].GetScore()));
                     }
                     else
                     {
-                        form.AddMessage(student.ID, s, string.Format("學生在「{0}」課程「{1}」中已有成績「{2}」。", course.Name, exam, sce.GetScore()));
+                        form.AddMessage(student.ID, s, string.Format("學生在「{0}」課程「{1}」中已有讀卡成績「{2}」。", course.Name, exam, sce.GetScore()));
                     }
 
-                    _warn.ReportProgress((int)(count * 100 / _deleteScoreList.Count), "產生警告訊息...");
+                    _warn.ReportProgress((int)(count * 100 / _existedScoreList.Count), "產生警告訊息...");
                 }
 
                 e.Result = form;
             };
-            _warn.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
+            _warn.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e)
             {
                 WarningForm form = e.Result as WarningForm;
 
@@ -468,21 +529,21 @@ namespace ExamScoreCardReaderV2
                     this.DialogResult = DialogResult.Cancel;
                 }
             };
-            _warn.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
+            _warn.ProgressChanged += delegate(object sender, ProgressChangedEventArgs e)
             {
                 FISCA.Presentation.MotherForm.SetStatusBarMessage("" + e.UserState, e.ProgressPercentage);
             };
 
             _files = new List<FileInfo>();
             _addScoreList = new List<SCETakeRecord>();
-            _deleteScoreList = new List<SCETakeRecord>();
+            _existedScoreList = new List<SCETakeRecord>();
             AddScoreDic = new Dictionary<string, SCETakeRecord>();
             examDict = new Dictionary<string, string>();
         }
 
         void _upload_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            FISCA.Presentation.MotherForm.SetStatusBarMessage("成績上傳中…", (int)(counter * 100f / (double)_addScoreList.Count));
+            FISCA.Presentation.MotherForm.SetStatusBarMessage("成績上傳中…", (int)(100f * counter / (double)_addScoreList.Count));
         }
 
         // 上傳成績完成
@@ -517,6 +578,21 @@ namespace ExamScoreCardReaderV2
         void _upload_DoWork(object sender, DoWorkEventArgs e)
         {
 
+            Dictionary<string, SCETakeRecord> dicExistedOri = new Dictionary<string, SCETakeRecord>();
+            foreach (SCETakeRecord sce in _existedScoreList)
+            {
+                if (!dicExistedOri.ContainsKey(sce.RefStudentID + "_" + sce.RefCourseID))
+                {
+                    dicExistedOri.Add(sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID, new SCETakeRecord()
+                    {
+                        RefSCAttendID = sce.RefSCAttendID,
+                        RefStudentID = sce.RefStudentID,
+                        RefCourseID = sce.RefCourseID,
+                        RefExamID = sce.RefExamID
+                    });
+                }
+            }
+
             dicAddScore_Raw = new Dictionary<string, SCETakeRecord>();
 
             dicUpdateScore = new Dictionary<string, SCETakeRecord>();
@@ -526,10 +602,10 @@ namespace ExamScoreCardReaderV2
             // 傳送與回傳筆數
             int SendCount = 0;
             // 刪除舊資料
-            SendCount = _deleteScoreList.Count;
+            SendCount = _existedScoreList.Count;
 
             // 取得 del id
-            List<string> delIDList = _deleteScoreList.Select(x => x.ID).ToList();
+            List<string> delIDList = _existedScoreList.Select(x => x.ID).ToList();
 
             //2016/5/6 穎驊改寫，因應新竹國中有一期定期成績綁平時分數的現象，故不可以每次用原作法都把SCETRecord檔案刪掉新增
             // 所以需要動用到Dictionary 比對key、value，使用Update更新資料，目前接手是直接使用既有的_deleteScoreList的項目
@@ -538,37 +614,83 @@ namespace ExamScoreCardReaderV2
 
             foreach (var y in _addScoreList)
             {
-                dicAddScore_Raw.Add(y.RefStudentID + "_" + y.RefCourseID + "_" + y.RefExamID, y);
+                var key = y.RefStudentID + "_" + y.RefCourseID + "_" + y.RefExamID;
+                dicAddScore_Raw.Add(key, y);
+                #region 檢查有沒有子成績
+                String CoursesWithSubScore_Key = dicAddScore_Raw[key].RefCourseID + "_" + dicAddScore_Raw[key].RefExamID;
+
+                if (!CoursesWithSubScore.ContainsKey(CoursesWithSubScore_Key))
+                {
+                    string strSQL_course = "SELECT * FROM course WHERE id =" + dicAddScore_Raw[key].RefCourseID;
+
+                    FISCA.Data.QueryHelper qh = new FISCA.Data.QueryHelper();
+
+                    System.Data.DataTable dt_course = qh.Select(strSQL_course);
+
+
+                    XmlDocument doc1 = new XmlDocument();
+
+                    string strXml = "" + dt_course.Rows[0]["Extensions"];
+
+                    if (strXml != "")
+                    {
+                        doc1.LoadXml(strXml);
+                    }
+
+                    //指定 ele 為 Xmldocument doc1 的Element
+                    XmlElement ele = doc1.DocumentElement;
+
+                    if (ele != null)
+                    {
+                        XmlElement eleGradeItemExtension = ele.SelectSingleNode("Extension[@Name='GradeItemExtension']") as XmlElement;
+
+                        // eleGradeItemExtension 有可能會=null， 代表原本Extensions欄位有其他奇怪的東西(EX: <Abbbbbs><Abbbbb>aaaa</Abbbbb></Abbbbbs>) 而通過第一關ele != null 的檢驗
+                        if (eleGradeItemExtension != null)
+                        {
+                            XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + dicAddScore_Raw[key].RefExamID + "'" + "]") as XmlElement;
+
+                            // 
+                            if (eleGradeItem != null)
+                            {
+                                CoursesWithSubScore.Add(CoursesWithSubScore_Key, true);
+                            }
+                            //eleGradeItem  = null 代表你Extensions 裡面本科本次考試沒有子成績的設定，判定該科目本次考試沒有子成績
+                            else
+                            {
+                                CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                            }
+                        }
+                        //eleGradeItemExtension  = null 代表你Extensions 裡面沒有任何一科子成績的設定，判定該科目本次考試沒有子成績
+                        else
+                        {
+                            CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                        }
+                    }
+                    //ele  = null 代表你Extensions 裡面甚麼都沒有，判定該科目本次考試沒有子成績
+                    else
+                    {
+                        CoursesWithSubScore.Add(CoursesWithSubScore_Key, false);
+                    }
+                }
+                #endregion
             }
 
-            foreach (var x in _deleteScoreList)
+            foreach (var x in _existedScoreList)
             {
                 dicUpdateScore.Add(x.RefStudentID + "_" + x.RefCourseID + "_" + x.RefExamID, x);
             }
 
             foreach (var r in dicAddScore_Raw.Keys)
             {
+
                 if (dicUpdateScore.ContainsKey(r))
                 {
-                    dicUpdateScore[r].SetScore(dicAddScore_Raw[r].GetScore(), true);
-
-                    try
-                    {
-                        SCETake.Update(dicUpdateScore[r]);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        e.Result = ex.Message;
-                        e.Cancel = true;
-                    }
-
+                    dicExistedOri[r].SetScore(dicUpdateScore[r].GetScore(), true, CoursesWithSubScore);
+                    dicUpdateScore[r].SetScore(dicAddScore_Raw[r].GetScore(), true, CoursesWithSubScore);
                 }
-
                 else
                 {
                     _addScoreList_Upload.Add(dicAddScore_Raw[r]);
-
                 }
             }
 
@@ -589,67 +711,116 @@ namespace ExamScoreCardReaderV2
 
             try
             {
-                #region 新增資料，分筆上傳
-
-                Dictionary<int, List<SCETakeRecord>> batchDict = new Dictionary<int, List<SCETakeRecord>>();
-                int bn = 150;
-                int n1 = (int)(_addScoreList_Upload.Count / bn);
-
-                if ((_addScoreList_Upload.Count % bn) != 0)
-                    n1++;
-
-                for (int i = 0; i <= n1; i++)
-                    batchDict.Add(i, new List<SCETakeRecord>());
-
-
-                if (_addScoreList_Upload.Count > 0)
+                #region 分筆更新
                 {
-                    int idx = 0, count = 1;
-                    // 分批
-                    foreach (SCETakeRecord rec in _addScoreList_Upload)
+                    Dictionary<int, List<SCETakeRecord>> batchDict = new Dictionary<int, List<SCETakeRecord>>();
+                    int bn = 150;
+                    int n1 = (int)(dicUpdateScore.Count / bn);
+
+                    if ((dicUpdateScore.Count % bn) != 0)
+                        n1++;
+
+                    for (int i = 0; i <= n1; i++)
+                        batchDict.Add(i, new List<SCETakeRecord>());
+
+
+                    if (dicUpdateScore.Count > 0)
                     {
-                        // 100 分一批
-                        if ((count % bn) == 0)
-                            idx++;
-
-                        batchDict[idx].Add(rec);
-                        count++;
-                    }
-                }
-
-
-                //上傳資料
-                foreach (KeyValuePair<int, List<SCETakeRecord>> data in batchDict)
-                {
-                    SendCount = 0;
-                    if (data.Value.Count > 0)
-                    {
-                        SendCount = data.Value.Count;
-                        try
+                        int idx = 0, count = 1;
+                        // 分批
+                        foreach (SCETakeRecord rec in dicUpdateScore.Values)
                         {
-                            SCETake.Insert(data.Value);
+                            // 100 分一批
+                            if ((count % bn) == 0)
+                                idx++;
+
+                            batchDict[idx].Add(rec);
+                            count++;
+                        }
+                    }
+
+
+                    //上傳資料
+                    foreach (KeyValuePair<int, List<SCETakeRecord>> data in batchDict)
+                    {
+                        SendCount = 0;
+                        if (data.Value.Count > 0)
+                        {
+                            SendCount = data.Value.Count;
+                            try
+                            {
+                                SCETake.Update(data.Value);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                e.Cancel = true;
+                                e.Result = ex.Message;
+                            }
+
+                            counter += SendCount;
 
                         }
-                        catch (Exception ex)
-                        {
-                            e.Cancel = true;
-                            e.Result = ex.Message;
-                        }
-
-                        counter += SendCount;
-
                     }
                 }
-
-                SetLog();
-
-                e.Result = _addScoreList_Upload.Count;
-
-
-
-
-
                 #endregion
+
+                #region 分筆新增
+                {
+                    Dictionary<int, List<SCETakeRecord>> batchDict = new Dictionary<int, List<SCETakeRecord>>();
+                    int bn = 150;
+                    int n1 = (int)(_addScoreList_Upload.Count / bn);
+
+                    if ((_addScoreList_Upload.Count % bn) != 0)
+                        n1++;
+
+                    for (int i = 0; i <= n1; i++)
+                        batchDict.Add(i, new List<SCETakeRecord>());
+
+
+                    if (_addScoreList_Upload.Count > 0)
+                    {
+                        int idx = 0, count = 1;
+                        // 分批
+                        foreach (SCETakeRecord rec in _addScoreList_Upload)
+                        {
+                            // 100 分一批
+                            if ((count % bn) == 0)
+                                idx++;
+
+                            batchDict[idx].Add(rec);
+                            count++;
+                        }
+                    }
+
+
+                    //上傳資料
+                    foreach (KeyValuePair<int, List<SCETakeRecord>> data in batchDict)
+                    {
+                        SendCount = 0;
+                        if (data.Value.Count > 0)
+                        {
+                            SendCount = data.Value.Count;
+                            try
+                            {
+                                SCETake.Insert(data.Value);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                e.Cancel = true;
+                                e.Result = ex.Message;
+                            }
+
+                            counter += SendCount;
+
+                        }
+                    }
+                }
+                #endregion
+
+                SetLog(dicExistedOri);
+                e.Result = counter;
             }
             catch (Exception ex)
             {
@@ -659,17 +830,9 @@ namespace ExamScoreCardReaderV2
             }
         }
 
-        private void SetLog()
+        private void SetLog(Dictionary<string, SCETakeRecord> delExistedOri)
         {
             sbLog = new StringBuilder();
-            Dictionary<string, SCETakeRecord> delDic = new Dictionary<string, SCETakeRecord>();
-            foreach (SCETakeRecord sce in _deleteScoreList)
-            {
-                if (!delDic.ContainsKey(sce.RefStudentID + "_" + sce.RefCourseID))
-                {
-                    delDic.Add(sce.RefStudentID + "_" + sce.RefCourseID, sce);
-                }
-            }
 
             foreach (SCETakeRecord sce in _addScoreList)
             {
@@ -677,19 +840,19 @@ namespace ExamScoreCardReaderV2
                 CourseRecord course = Course.SelectByID(sce.RefCourseID);
                 string exam = (examDict.ContainsKey(sce.RefExamID) ? examDict[sce.RefExamID] : "<未知的試別>");
 
-                if (delDic.ContainsKey(sce.RefStudentID + "_" + sce.RefCourseID))
+                if (delExistedOri.ContainsKey(sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID)
+                    && delExistedOri[sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID].GetScore() != null)
                 {
                     string classname = student.Class != null ? student.Class.Name : "";
                     string seatno = student.SeatNo.HasValue ? student.SeatNo.Value.ToString() : "";
-                    sbLog.AppendLine(string.Format("班級「{0}」座號「{1}」姓名「{2}」在試別「{3}」課程「{4}」將成績「{5}」修改為「{6}」。", classname, seatno, student.Name, course.Name, exam, delDic[sce.RefStudentID + "_" + sce.RefCourseID].GetScore(), sce.GetScore()));
+                    sbLog.AppendLine(string.Format("班級「{0}」座號「{1}」姓名「{2}」在試別「{3}」課程「{4}」將讀卡成績「{5}」修改為「{6}」。", classname, seatno, student.Name, course.Name, exam, delExistedOri[sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID].GetScore(), sce.GetScore()));
 
                 }
                 else
                 {
                     string classname = student.Class != null ? student.Class.Name : "";
                     string seatno = student.SeatNo.HasValue ? student.SeatNo.Value.ToString() : "";
-                    sbLog.AppendLine(string.Format("班級「{0}」座號「{1}」姓名「{2}」在「{3}」課程「{4}」新增成績「{5}」。", classname, seatno, student.Name, course.Name, exam, sce.GetScore()));
-
+                    sbLog.AppendLine(string.Format("班級「{0}」座號「{1}」姓名「{2}」在「{3}」課程「{4}」新增讀卡成績「{5}」。", classname, seatno, student.Name, course.Name, exam, sce.GetScore()));
                 }
             }
 
@@ -845,17 +1008,214 @@ namespace ExamScoreCardReaderV2
 
     internal static class Ext
     {
-        public static void SetScore(this SCETakeRecord target, decimal? score, bool trimEnd)
+
+        public static void SetScore(this SCETakeRecord target, decimal? score, bool trimEnd, Dictionary<String, bool> CoursesWithSubScore)
         {
             XmlElement element = target.ToXML();
-            element.SelectSingleNode("Score").InnerText = K12.Data.Decimal.GetString(score);
+
+            //  取得當前XmlElement 的Document，超重要，如果另外New一個Document ，兩個不同的Document 產生的Element 不能互相穿插
+            XmlDocument doc = element.OwnerDocument;
+
+            String CoursesWithSubScore_Key = target.RefCourseID + "_" + target.RefExamID;
+
+            //沒有子成績
+            if (!CoursesWithSubScore[CoursesWithSubScore_Key])
+            {
+                element.SelectSingleNode("Score").InnerText = K12.Data.Decimal.GetString(score);
+
+                XmlElement Extension = element.SelectSingleNode("Extension") as XmlElement;
+
+
+                XmlElement Extension_inner = Extension.SelectSingleNode("Extension") as XmlElement;
+
+                if (Extension_inner != null)
+                {
+
+                    XmlElement eleCScore = Extension_inner.SelectSingleNode("CScore") as XmlElement;
+
+                    if (eleCScore == null)
+                    {
+                        XmlElement CScore = doc.CreateElement("CScore");
+                        Extension_inner.AppendChild(CScore);
+                        CScore.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+                    else
+                    {
+                        eleCScore.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+
+                    XmlElement elePScore = Extension_inner.SelectSingleNode("PScore") as XmlElement;
+
+                    if (elePScore == null)
+                    {
+                        XmlElement PScore = doc.CreateElement("PScore");
+                        Extension_inner.AppendChild(PScore);
+                        PScore.InnerText = K12.Data.Decimal.GetString(0);
+                    }
+
+                    XmlElement eleScore = Extension_inner.SelectSingleNode("Score") as XmlElement;
+                    if (eleScore == null)
+                    {
+                        XmlElement Score = doc.CreateElement("Score");
+                        Extension_inner.AppendChild(Score);
+                        Score.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+                    else
+                    {
+                        eleScore.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+
+
+                    element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
+
+                }
+                else
+                {
+
+                    XmlElement Extension_innerCreate = doc.CreateElement("Extension");
+
+                    Extension.AppendChild(Extension_innerCreate);
+
+
+                    XmlElement CScore = doc.CreateElement("CScore");
+                    Extension_innerCreate.AppendChild(CScore);
+                    CScore.InnerText = K12.Data.Decimal.GetString(score);
+
+
+                    XmlElement PScore = doc.CreateElement("PScore");
+                    Extension_innerCreate.AppendChild(PScore);
+                    PScore.InnerText = K12.Data.Decimal.GetString(0);
+
+                    XmlElement Score = doc.CreateElement("Score");
+                    Extension_innerCreate.AppendChild(Score);
+                    Score.InnerText = K12.Data.Decimal.GetString(score);
+
+                    element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
+
+
+                }
+
+                //Extension.SelectSingleNode("Score").InnerText = K12.Data.Decimal.GetString(score);
+
+                //Extension.SelectSingleNode("CScore").InnerText = K12.Data.Decimal.GetString(score);
+
+                //Extension.SelectSingleNode("PScore").InnerText = "0";
+
+            }
+            // 有子成績
+            else
+            {
+
+                XmlElement Extension = element.SelectSingleNode("Extension") as XmlElement;
+
+                XmlElement Extension_inner = Extension.SelectSingleNode("Extension") as XmlElement;
+
+                if (Extension_inner != null)
+                {
+
+                    XmlElement eleCScore = Extension_inner.SelectSingleNode("CScore") as XmlElement;
+
+                    if (eleCScore == null)
+                    {
+                        XmlElement CScore = doc.CreateElement("CScore");
+                        Extension_inner.AppendChild(CScore);
+                        CScore.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+                    else
+                    {
+                        eleCScore.InnerText = K12.Data.Decimal.GetString(score);
+                    }
+
+                    XmlElement elePScore = Extension_inner.SelectSingleNode("PScore") as XmlElement;
+
+                    if (elePScore == null)
+                    {
+                        XmlElement PScore = doc.CreateElement("PScore");
+                        Extension_inner.AppendChild(PScore);
+                        PScore.InnerText = K12.Data.Decimal.GetString(0);
+                    }
+
+                    XmlElement eleScore = Extension_inner.SelectSingleNode("Score") as XmlElement;
+                    if (eleScore == null)
+                    {
+                        XmlElement Score = doc.CreateElement("Score");
+                        Extension_inner.AppendChild(Score);
+                        Score.InnerText = K12.Data.Decimal.GetString(score + System.Decimal.Parse(Extension_inner.SelectSingleNode("PScore").InnerText));
+                    }
+                    else
+                    {
+                        eleScore.InnerText = K12.Data.Decimal.GetString(score + System.Decimal.Parse(Extension_inner.SelectSingleNode("PScore").InnerText));
+                    }
+
+
+                    element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
+
+                }
+                else
+                {
+                    XmlElement Extension_innerCreate = doc.CreateElement("Extension");
+
+                    Extension.AppendChild(Extension_innerCreate);
+
+
+                    XmlElement CScore = doc.CreateElement("CScore");
+                    Extension_innerCreate.AppendChild(CScore);
+                    CScore.InnerText = K12.Data.Decimal.GetString(score);
+
+
+                    XmlElement PScore = doc.CreateElement("PScore");
+                    Extension_innerCreate.AppendChild(PScore);
+                    PScore.InnerText = K12.Data.Decimal.GetString(0);
+
+
+                    XmlElement Score = doc.CreateElement("Score");
+                    Extension_innerCreate.AppendChild(Score);
+                    Score.InnerText = K12.Data.Decimal.GetString(score + System.Decimal.Parse(Extension_inner.SelectSingleNode("PScore").InnerText));
+
+
+                    element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
+
+
+                }
+
+            }
+
             target.Load(element);
         }
+
+        //public static decimal? GetScore(this SCETakeRecord target)
+        //{
+        //    XmlElement element = target.ToXML();
+        //    return K12.Data.Decimal.ParseAllowNull(element.SelectSingleNode("Score").InnerText);
+        //}
 
         public static decimal? GetScore(this SCETakeRecord target)
         {
             XmlElement element = target.ToXML();
-            return K12.Data.Decimal.ParseAllowNull(element.SelectSingleNode("Score").InnerText);
+
+            XmlElement Extension = element.SelectSingleNode("Extension") as XmlElement;
+
+            XmlElement Extension_inner = Extension.SelectSingleNode("Extension") as XmlElement;
+
+            if (Extension_inner != null)
+            {
+                XmlElement eleCScore = Extension_inner.SelectSingleNode("CScore") as XmlElement;
+
+                if (eleCScore != null)
+                {
+                    return K12.Data.Decimal.ParseAllowNull(eleCScore.InnerText);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return null;
+            }
+            //return K12.Data.Decimal.ParseAllowNull(element.SelectSingleNode("Score").InnerText);
         }
+
     }
 }

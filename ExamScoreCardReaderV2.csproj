@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{80EA510D-77CC-4CF0-8EBB-CFA3DE45F8E3}</ProjectGuid>
+    <ProjectGuid>{9F6E4DB3-6D67-4A50-B544-2ED17011F8F8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>JH_ExamScoreCardReader</RootNamespace>
-    <AssemblyName>JH_ExamScoreCardReader</AssemblyName>
+    <RootNamespace>ExamScoreCardReaderV2</RootNamespace>
+    <AssemblyName>ExamScoreCardReaderV2</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>
@@ -219,6 +219,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="SubScoreSettingForm.resx">
+      <DependentUpon>SubScoreSettingForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="ValidationErrorViewer.resx">
       <DependentUpon>ValidationErrorViewer.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -241,7 +244,15 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="SP_course.cs" />
+    <Compile Include="SP_CourseRecord.cs" />
     <Compile Include="StudentObj.cs" />
+    <Compile Include="SubScoreSettingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SubScoreSettingForm.Designer.cs">
+      <DependentUpon>SubScoreSettingForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="tool.cs" />
     <Compile Include="UDT\ClassCode.cs" />
     <Compile Include="UDT\ExamCode.cs" />

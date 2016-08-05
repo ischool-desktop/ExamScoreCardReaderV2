@@ -6,6 +6,7 @@ using FISCA;
 using FISCA.Presentation;
 using FISCA.Permission;
 
+
 namespace ExamScoreCardReaderV2
 {
     /// <summary>
@@ -26,6 +27,26 @@ namespace ExamScoreCardReaderV2
             {
                 ImportStartupForm form = new ImportStartupForm();
                 form.ShowDialog();
+            };
+
+            // 2016/8/4 穎驊新增試別子成績設定
+            RibbonBarButton subscoreButton = rbItem["試別子成績設定"];            
+            subscoreButton.Size = RibbonBarButton.MenuButtonSize.Large;
+            subscoreButton.Image = Properties.Resources.設定;
+            subscoreButton.Enable = Permissions.試別子成績設定權限;
+            subscoreButton.Click += delegate
+            {
+                // 取得CourseList
+                List<SP_CourseRecord> CourseList = SP_course.SelectByIDs(K12.Presentation.NLDPanels.Course.SelectedSource);
+
+                // 防止使用者不點選課程 直接進入視窗 造成下不完整的SQL 錯誤
+                if (CourseList.Count == 0)
+                {
+                    FISCA.Presentation.Controls.MsgBox.Show("請選擇要改變子成績之課程");
+                    return;
+                }
+
+                new SubScoreSettingForm().ShowDialog();
             };
 
             RibbonBarButton classButton = rbItem["班級代碼設定"];
@@ -52,11 +73,14 @@ namespace ExamScoreCardReaderV2
                 new SubjectCodeConfig().ShowDialog();
             };
 
+        
+
             Catalog detail = RoleAclSource.Instance["課程"]["功能按鈕"];
             detail.Add(new ReportFeature(Permissions.匯入讀卡成績, "匯入讀卡成績"));
             detail.Add(new ReportFeature(Permissions.班級代碼設定, "班級代碼設定"));
             detail.Add(new ReportFeature(Permissions.試別代碼設定, "試別代碼設定"));
             detail.Add(new ReportFeature(Permissions.科目代碼設定, "科目代碼設定"));
+            detail.Add(new ReportFeature(Permissions.試別子成績設定, "試別子成績設定"));
         }
     }
 }
