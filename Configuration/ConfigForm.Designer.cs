@@ -64,12 +64,11 @@
             // 
             // picWaiting
             // 
-            this.picWaiting.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.picWaiting.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.picWaiting.BackColor = System.Drawing.Color.Transparent;
             this.picWaiting.ErrorImage = null;
-            this.picWaiting.Image = Properties.Resources.loading;
+            this.picWaiting.Image = global::ExamScoreCardReaderV2.Properties.Resources.loading;
             this.picWaiting.Location = new System.Drawing.Point(147, 107);
             this.picWaiting.Name = "picWaiting";
             this.picWaiting.Size = new System.Drawing.Size(32, 32);
@@ -111,6 +110,7 @@
             this.Controls.Add(this.picWaiting);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnSave);
+            this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("微軟正黑體", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Name = "ConfigForm";
             this.Text = "Abstraction Form";

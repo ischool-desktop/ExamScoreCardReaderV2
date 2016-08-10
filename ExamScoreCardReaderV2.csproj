@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{9F6E4DB3-6D67-4A50-B544-2ED17011F8F8}</ProjectGuid>
+    <ProjectGuid>{80EA510D-77CC-4CF0-8EBB-CFA3DE45F8E3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ExamScoreCardReaderV2</RootNamespace>
@@ -63,61 +63,54 @@
     <Reference Include="Aspose.Cells, Version=4.3.0.0, Culture=neutral, PublicKeyToken=9a40d5a4b59e5256, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\Aspose.Cells.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="DevComponents.DotNetBar2, Version=7.9.0.3, Culture=neutral, PublicKeyToken=7eb7c3a35b91de04, processorArchitecture=MSIL">
+    <Reference Include="DevComponents.DotNetBar2, Version=9.5.0.1, Culture=neutral, PublicKeyToken=7eb7c3a35b91de04, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\DevComponents.DotNetBar2.dll</HintPath>
     </Reference>
-    <Reference Include="FISCA, Version=1.0.1.3, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA, Version=2.5.0.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.Authentication, Version=1.9.0.18, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA.Authentication, Version=1.9.0.20, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Authentication.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Data, Version=1.0.0.3, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Data.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.DSAUtil, Version=3.2.21.2, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA.DSAClient, Version=1.0.1.16, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Library\FISCA.DSAClient.dll</HintPath>
+    </Reference>
+    <Reference Include="FISCA.DSAUtil, Version=3.9.0.10, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.DSAUtil.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.LogAgent, Version=1.0.0.4, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA.LogAgent, Version=1.0.0.6, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.LogAgent.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Permission, Version=1.2.0.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Permission.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.Presentation, Version=1.0.1.1, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA.Presentation, Version=1.1.0.19, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Presentation.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.UDT, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FISCA.UDT, Version=1.0.2.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.UDT.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="K12.Data, Version=1.0.2.13, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="K12.Data, Version=2.0.0.5, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\K12.Data.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="K12.Presentation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\K12.Presentation.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="SmartSchool.ErrorReporting, Version=1.0.2.3, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -316,27 +309,29 @@
     <Content Include="Library\FISCA.Data.pdb" />
     <Content Include="Library\FISCA.Data.xml" />
     <Content Include="Library\FISCA.dll" />
+    <Content Include="Library\FISCA.DSAClient.dll" />
+    <Content Include="Library\FISCA.DSAClient.pdb" />
+    <Content Include="Library\FISCA.DSAClient.xml" />
     <Content Include="Library\FISCA.DSAUtil.dll" />
+    <Content Include="Library\FISCA.DSAUtil.pdb" />
     <Content Include="Library\FISCA.DSAUtil.xml" />
     <Content Include="Library\FISCA.LogAgent.dll" />
+    <Content Include="Library\FISCA.LogAgent.pdb" />
     <Content Include="Library\FISCA.LogAgent.xml" />
+    <Content Include="Library\FISCA.pdb" />
     <Content Include="Library\FISCA.Permission.dll" />
     <Content Include="Library\FISCA.Permission.pdb" />
     <Content Include="Library\FISCA.Permission.xml" />
     <Content Include="Library\FISCA.Presentation.dll" />
+    <Content Include="Library\FISCA.Presentation.pdb" />
     <Content Include="Library\FISCA.Presentation.xml" />
     <Content Include="Library\FISCA.UDT.dll" />
     <Content Include="Library\FISCA.UDT.pdb" />
     <Content Include="Library\FISCA.UDT.xml" />
     <Content Include="Library\FISCA.xml" />
-    <Content Include="Library\JHSchool.Data.dll" />
     <Content Include="Library\K12.Data.dll" />
-    <Content Include="Library\K12.Data.xml" />
     <Content Include="Library\K12.Presentation.dll" />
     <Content Include="Library\K12.Presentation.xml" />
-    <Content Include="Library\SHSchool.Data.dll" />
-    <Content Include="Library\SHSchool.Data.pdb" />
-    <Content Include="Library\SHSchool.Data.xml" />
     <Content Include="Library\SmartSchool.ErrorReporting.dll" />
     <Content Include="Library\SmartSchool.ErrorReporting.xml" />
     <None Include="Resources\byte_add_64.png" />

@@ -39,9 +39,9 @@
             // dgv
             // 
             this.dgv.AllowUserToResizeRows = false;
-            this.dgv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgv.BackgroundColor = System.Drawing.Color.White;
             this.dgv.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.dgv.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -57,10 +57,10 @@
             dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
             this.dgv.DefaultCellStyle = dataGridViewCellStyle1;
             this.dgv.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(215)))), ((int)(((byte)(229)))));
-            this.dgv.Location = new System.Drawing.Point(6, 5);
+            this.dgv.Location = new System.Drawing.Point(6, 12);
             this.dgv.Name = "dgv";
             this.dgv.RowHeadersWidth = 25;
-            this.dgv.Size = new System.Drawing.Size(315, 207);
+            this.dgv.Size = new System.Drawing.Size(315, 200);
             this.dgv.TabIndex = 3;
             this.dgv.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_CellEndEdit);
             // 
@@ -77,11 +77,9 @@
             // 
             // ExamCodeConfig
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(327, 246);
             this.Controls.Add(this.dgv);
-            this.MaximumSize = new System.Drawing.Size(335, 280);
-            this.MinimumSize = new System.Drawing.Size(335, 280);
+            this.DoubleBuffered = true;
             this.Name = "ExamCodeConfig";
             this.Text = "試別代碼設定";
             this.Controls.SetChildIndex(this.btnExport, 0);

@@ -38,30 +38,30 @@
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(175, 362);
+            this.btnSave.Location = new System.Drawing.Point(175, 358);
             // 
             // btnClose
             // 
-            this.btnClose.Location = new System.Drawing.Point(256, 362);
+            this.btnClose.Location = new System.Drawing.Point(256, 358);
             // 
             // picWaiting
             // 
-            this.picWaiting.Location = new System.Drawing.Point(147, 179);
+            this.picWaiting.Location = new System.Drawing.Point(147, 177);
             // 
             // btnExport
             // 
-            this.btnExport.Location = new System.Drawing.Point(6, 362);
+            this.btnExport.Location = new System.Drawing.Point(6, 358);
             // 
             // btnImport
             // 
-            this.btnImport.Location = new System.Drawing.Point(62, 362);
+            this.btnImport.Location = new System.Drawing.Point(62, 358);
             // 
             // dgv
             // 
             this.dgv.AllowUserToResizeRows = false;
-            this.dgv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgv.BackgroundColor = System.Drawing.Color.White;
             this.dgv.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.dgv.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -77,10 +77,10 @@
             dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
             this.dgv.DefaultCellStyle = dataGridViewCellStyle1;
             this.dgv.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(215)))), ((int)(((byte)(229)))));
-            this.dgv.Location = new System.Drawing.Point(6, 6);
+            this.dgv.Location = new System.Drawing.Point(6, 12);
             this.dgv.Name = "dgv";
             this.dgv.RowHeadersWidth = 25;
-            this.dgv.Size = new System.Drawing.Size(315, 350);
+            this.dgv.Size = new System.Drawing.Size(315, 339);
             this.dgv.TabIndex = 4;
             this.dgv.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_CellEndEdit);
             // 
@@ -97,19 +97,17 @@
             // 
             // ClassCodeConfig
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(327, 391);
+            this.ClientSize = new System.Drawing.Size(327, 386);
             this.Controls.Add(this.dgv);
-            this.MaximumSize = new System.Drawing.Size(335, 425);
-            this.MinimumSize = new System.Drawing.Size(335, 425);
+            this.DoubleBuffered = true;
             this.Name = "ClassCodeConfig";
             this.Text = "班級代碼設定";
-            this.Controls.SetChildIndex(this.btnImport, 0);
-            this.Controls.SetChildIndex(this.btnExport, 0);
-            this.Controls.SetChildIndex(this.btnSave, 0);
             this.Controls.SetChildIndex(this.dgv, 0);
+            this.Controls.SetChildIndex(this.btnSave, 0);
             this.Controls.SetChildIndex(this.btnClose, 0);
             this.Controls.SetChildIndex(this.picWaiting, 0);
+            this.Controls.SetChildIndex(this.btnExport, 0);
+            this.Controls.SetChildIndex(this.btnImport, 0);
             ((System.ComponentModel.ISupportInitialize)(this.picWaiting)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgv)).EndInit();
             this.ResumeLayout(false);

@@ -19,26 +19,19 @@ namespace ExamScoreCardReaderV2
     {
 
         // 取得CourseList
-        List<SP_CourseRecord> CourseList = SP_course.SelectByIDs(K12.Presentation.NLDPanels.Course.SelectedSource);
-
-        List<String> CourseIDList = new List<string>();
+        List<SP_CourseRecord> _CourseList = SP_course.SelectByIDs(K12.Presentation.NLDPanels.Course.SelectedSource);
 
         // 紀錄Exam_ID 之 Dictionary
-        Dictionary<int, String> Exam_ID_Dict = new Dictionary<int, string>();
+        Dictionary<int, String> _DicExamID = new Dictionary<int, string>();
 
         public SubScoreSettingForm()
         {
-            InitializeComponent();                               
-            
+            InitializeComponent();
+
             FISCA.Data.QueryHelper qh = new FISCA.Data.QueryHelper();
 
-            foreach (var course in CourseList)
-            {
-                CourseIDList.Add(course.ID);
-            }
-
             // 因為K12 無法取得Extension欄位的資料(其為internal)，所以另外下SQL 抓Table 使用
-            string strSQL_course = "SELECT * FROM course WHERE id IN (" + string.Join(",", CourseIDList.ToArray()) + ")";
+            string strSQL_course = "SELECT * FROM course WHERE id IN (" + string.Join(",", K12.Presentation.NLDPanels.Course.SelectedSource.ToArray()) + ")";
 
             System.Data.DataTable dt_course = qh.Select(strSQL_course);
 
@@ -56,20 +49,21 @@ namespace ExamScoreCardReaderV2
                     col.CellTemplate = new DataGridViewCheckBoxCell();
 
                     col.Name = dt_exam.Rows[ii]["exam_name"].ToString();
+                    col.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
                     col.Visible = true;
                     col.Width = 140;
 
                     // 將Exam_ID 加入，Key 使用ii +3 是因為方便後續取得Exam_id使用，可以直接填入Col = 3 、4、5 來查詢(UI 上 子成績項目是從第三欄開始)
-                    Exam_ID_Dict.Add(ii + 3, dt_exam.Rows[ii]["id"].ToString());
+                    _DicExamID.Add(ii + 3, dt_exam.Rows[ii]["id"].ToString());
 
                     dataGridViewX1.Columns.Add(col);
                 }
             }
 
             // 將Course 內的課程資訊加到dataGridViewX1
-            if (CourseList.Count != 0)
+            if (_CourseList.Count != 0)
             {
-                foreach (var course in CourseList)
+                foreach (var course in _CourseList)
                 {
                     DataGridViewRow row = new DataGridViewRow();
 
@@ -77,13 +71,13 @@ namespace ExamScoreCardReaderV2
                     // 但想了想，這樣做就無法動態產生，所以會有後續的Code
                     row.CreateCells(dataGridViewX1, course.SchoolYear, course.Semester, course.Name);
 
-                    for(int i =0 ; i < dt_course.Rows.Count;i++)                 
-                    {                        
+                    for (int i = 0; i < dt_course.Rows.Count; i++)
+                    {
                         if (course.ID == dt_course.Rows[i]["id"].ToString())
                         {
                             XmlDocument doc1 = new XmlDocument();
                             string strXml = "" + dt_course.Rows[i]["Extensions"];
-                            
+
                             if (strXml != "")
                             {
                                 doc1.LoadXml(strXml);
@@ -97,7 +91,7 @@ namespace ExamScoreCardReaderV2
                                 {
                                     for (int exam_col = 0; exam_col < dt_exam.Rows.Count; exam_col++)
                                     {
-                                        XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + Exam_ID_Dict[exam_col + 3] + "'" + "]") as XmlElement;
+                                        XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + _DicExamID[exam_col + 3] + "'" + "]") as XmlElement;
 
                                         // 去選取有該Exam ID 的XmlElement ，找得到代表有該項子成績，Chk = true，反之Chk = false
                                         if (eleGradeItem != null)
@@ -113,19 +107,20 @@ namespace ExamScoreCardReaderV2
 
                                 // eleGradeItemExtension 為null 的話，代表完全沒有子成績項目，所以所有子成績要設為False
                                 else
-                                {                                  
+                                {
                                     for (int exam_col = 0; exam_col < dt_exam.Rows.Count; exam_col++)
                                     {
                                         row.Cells[exam_col + 3].Value = false;
-                                    }                                                                
+                                    }
                                 }
                                 dataGridViewX1.Rows.Add(row);
                             }
-                                // 假如抓下的 String (strXml = "" + dt_course.Rows[i]["Extensions"]) 為null 的話，代表完全沒有子成績、Extensions 欄位裏頭甚麼都沒有，所以所有子成績要設為False
-                            else {
+                            // 假如抓下的 String (strXml = "" + dt_course.Rows[i]["Extensions"]) 為null 的話，代表完全沒有子成績、Extensions 欄位裏頭甚麼都沒有，所以所有子成績要設為False
+                            else
+                            {
                                 for (int exam_col = 0; exam_col < dt_exam.Rows.Count; exam_col++)
                                 {
-                                    row.Cells[exam_col + 3].Value = false;                                                                
+                                    row.Cells[exam_col + 3].Value = false;
                                 }
                                 dataGridViewX1.Rows.Add(row);
                             }
@@ -143,7 +138,7 @@ namespace ExamScoreCardReaderV2
 
             UpdateHelper uh = new UpdateHelper();
 
-            foreach (SP_CourseRecord SPCR in CourseList)
+            foreach (SP_CourseRecord SPCR in _CourseList)
             {
                 foreach (DataGridViewRow dgvr in dataGridViewX1.Rows)
                 {
@@ -151,7 +146,7 @@ namespace ExamScoreCardReaderV2
                     {
                         if (SPCR.SchoolYear.ToString() == dgvr.Cells[0].Value.ToString() && SPCR.Semester.Value.ToString() == dgvr.Cells[1].Value.ToString() && SPCR.Name == dgvr.Cells[2].Value.ToString())
                         {
-                            String body = "";                            
+                            String body = "";
 
                             string strSQL_course = "SELECT * FROM course WHERE id =" + SPCR.ID;
 
@@ -207,7 +202,7 @@ namespace ExamScoreCardReaderV2
 
                                             GradeItemExtension.SetAttribute("Calc", "SUM");
 
-                                            GradeItemExtension.SetAttribute("ExamID", Exam_ID_Dict[i]);
+                                            GradeItemExtension.SetAttribute("ExamID", _DicExamID[i]);
 
                                             XmlElement SubExam1 = doc1.CreateElement("SubExam");
 
@@ -232,16 +227,16 @@ namespace ExamScoreCardReaderV2
                                             SubExam2.SetAttribute("SubName", "試卷");
 
                                             SubExam2.SetAttribute("Type", "Number");
-                                            
+
                                         }
                                     //  這裡不做dgvr.Cells[i].Value.ToString() == "Flase" 的處理，是因為 假如原本Extensions欄位是空的話，只需要新增，不需要移除
                                 }
 
                                 // 因為ele 沒有東西，所以傳新建立XmlElement extensionsHead的的進去   記得要下SQL 內的String 要用 ' ' 包起來ㄚㄚ~
-                                body ="'"+ extensionsHead.OuterXml+"'";
+                                body = "'" + extensionsHead.OuterXml + "'";
                             }
                             // 假如原本Extensions欄位有東西(ele != null)，再另外處理
-                            else 
+                            else
                             {
                                 for (int i = 3; i < dataGridViewX1.ColumnCount; i++)
                                 {
@@ -253,7 +248,7 @@ namespace ExamScoreCardReaderV2
                                             // eleGradeItemExtension 有可能會=null， 代表原本Extensions欄位有其他奇怪的東西(EX: <Abbbbbs><Abbbbb>aaaa</Abbbbb></Abbbbbs>)
                                             if (eleGradeItemExtension != null)
                                             {
-                                                XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + Exam_ID_Dict[i] + "'" + "]") as XmlElement;
+                                                XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + _DicExamID[i] + "'" + "]") as XmlElement;
 
                                                 // 在子成績CheckBox = true 的狀況下，去搜尋那一項的子成績已經加入，如果沒有 就幫他創。
                                                 if (eleGradeItem == null)
@@ -264,7 +259,7 @@ namespace ExamScoreCardReaderV2
 
                                                     GradeItemExtension.SetAttribute("Calc", "SUM");
 
-                                                    GradeItemExtension.SetAttribute("ExamID", Exam_ID_Dict[i]);
+                                                    GradeItemExtension.SetAttribute("ExamID", _DicExamID[i]);
 
                                                     XmlElement SubExam1 = doc1.CreateElement("SubExam");
 
@@ -292,11 +287,11 @@ namespace ExamScoreCardReaderV2
                                                 }
                                             }
 
-                                                 // eleGradeItemExtension 有可能會=null， 代表原本Extensions欄位有其他奇怪的東西(EX: <Abbbbbs><Abbbbb>aaaa</Abbbbb></Abbbbbs>)
-                                            else 
+                                            // eleGradeItemExtension 有可能會=null， 代表原本Extensions欄位有其他奇怪的東西(EX: <Abbbbbs><Abbbbb>aaaa</Abbbbb></Abbbbbs>)
+                                            else
                                             {
                                                 XmlElement extensionsBody = doc1.CreateElement("Extension");
-                                                
+
                                                 ele.AppendChild(extensionsBody);
 
                                                 extensionsBody.SetAttribute("Name", "GradeItemExtension");
@@ -307,7 +302,7 @@ namespace ExamScoreCardReaderV2
 
                                                 GradeItemExtension.SetAttribute("Calc", "SUM");
 
-                                                GradeItemExtension.SetAttribute("ExamID", Exam_ID_Dict[i]);
+                                                GradeItemExtension.SetAttribute("ExamID", _DicExamID[i]);
 
                                                 XmlElement SubExam1 = doc1.CreateElement("SubExam");
 
@@ -331,37 +326,38 @@ namespace ExamScoreCardReaderV2
 
                                                 SubExam2.SetAttribute("SubName", "試卷");
 
-                                                SubExam2.SetAttribute("Type", "Number");                                                                                        
+                                                SubExam2.SetAttribute("Type", "Number");
                                             }
                                         }
                                         // 該子成績沒勾選的話，又如果本來有其資料， 用RemoveChild 整陀Element 移掉
-                                        else { 
-                                         XmlElement eleGradeItemExtension = ele.SelectSingleNode("Extension[@Name='GradeItemExtension']") as XmlElement;
+                                        else
+                                        {
+                                            XmlElement eleGradeItemExtension = ele.SelectSingleNode("Extension[@Name='GradeItemExtension']") as XmlElement;
 
-                                         // 需要加eleGradeItemExtension != null判斷，因為欄位Extension 內可能有其他資料
+                                            // 需要加eleGradeItemExtension != null判斷，因為欄位Extension 內可能有其他資料
                                             if (eleGradeItemExtension != null)
-                                         {
-                                             XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + Exam_ID_Dict[i] + "'" + "]") as XmlElement;
+                                            {
+                                                XmlElement eleGradeItem = eleGradeItemExtension.SelectSingleNode("GradeItemExtension[@ExamID=" + "'" + _DicExamID[i] + "'" + "]") as XmlElement;
 
-                                             if (eleGradeItem != null)
-                                             {
-                                                 eleGradeItemExtension.RemoveChild(eleGradeItem);
-                                             }
-                                         }                                   
+                                                if (eleGradeItem != null)
+                                                {
+                                                    eleGradeItemExtension.RemoveChild(eleGradeItem);
+                                                }
+                                            }
                                         }
                                 }
 
                                 // 因為ele 本來有東西，所以更新後一樣傳本體   記得要下SQL 內的String 要用 ' ' 包起來ㄚㄚ~
-                                body = "'" + ele.OuterXml + "'";                            
-                            }                                                                                                          
+                                body = "'" + ele.OuterXml + "'";
+                            }
 
                             // 組合最終要上傳的SQL 指令
-                            String sql = @"UPDATE course SET extensions =" +body+ " WHERE id="+SPCR.ID;
+                            String sql = @"UPDATE course SET extensions =" + body + " WHERE id=" + SPCR.ID;
 
                             // 使用 UpdateHelper 執行SQL
-                            uh.Execute(sql);  
+                            uh.Execute(sql);
                         }
-                    }                    
+                    }
                 }
             }
 
@@ -369,7 +365,7 @@ namespace ExamScoreCardReaderV2
             this.Close();
         }
 
-       
+
 
         // 取消
         private void buttonX2_Click(object sender, EventArgs e)
