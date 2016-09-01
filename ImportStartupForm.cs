@@ -35,7 +35,7 @@ namespace ExamScoreCardReaderV2
         private List<SCETakeRecord> _addScoreList;
         private List<SCETakeRecord> _existedScoreList;
         private Dictionary<string, SCETakeRecord> AddScoreDic;
-        private Dictionary<string, string> examDict;
+        private Dictionary<string, string> _dicExam;
 
         private Dictionary<string, SCETakeRecord> dicAddScore_Raw;
         private Dictionary<string, SCETakeRecord> dicUpdateScore;
@@ -121,11 +121,11 @@ namespace ExamScoreCardReaderV2
 
             _worker = new BackgroundWorker();
             _worker.WorkerReportsProgress = true;
-            _worker.ProgressChanged += delegate(object sender, ProgressChangedEventArgs e)
+            _worker.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
             {
                 lblMessage.Text = "" + e.UserState;
             };
-            _worker.DoWork += delegate(object sender, DoWorkEventArgs e)
+            _worker.DoWork += delegate (object sender, DoWorkEventArgs e)
             {
                 #region Worker DoWork
                 _worker.ReportProgress(0, "訊息：檢查讀卡文字格式…");
@@ -193,7 +193,7 @@ namespace ExamScoreCardReaderV2
                 //List<SCAttendRecord> scaList2 = SCAttend.SelectByStudentIDAndCourseID(s_ids, c_ids.ToList<string>());
                 List<SCAttendRecord> scaList = new List<SCAttendRecord>();
                 FunctionSpliter<string, SCAttendRecord> spliter = new FunctionSpliter<string, SCAttendRecord>(300, 3);
-                spliter.Function = delegate(List<string> part)
+                spliter.Function = delegate (List<string> part)
                 {
                     return SCAttend.Select(part, c_ids.ToList<string>(), null, SchoolYear.ToString(), Semester.ToString());
                 };
@@ -213,7 +213,32 @@ namespace ExamScoreCardReaderV2
                 _dataRecordValidator.Register(scCreator.CreateStudentValidator());
                 _dataRecordValidator.Register(new ExamValidator(examList));
                 _dataRecordValidator.Register(scCreator.CreateSCAttendValidator());
-                _dataRecordValidator.Register(new CourseExamValidator(scCreator.StudentCourseInfo, aeList, examList));
+                //_dataRecordValidator.Register(new CourseExamValidator(scCreator.StudentCourseInfo, aeList, examList));
+                #region 課程試別對照
+                Dictionary<string, List<string>> aeTable;
+                aeTable = new Dictionary<string, List<string>>();
+
+                Dictionary<string, string> examNames = new Dictionary<string, string>();
+                foreach (ExamRecord exam in examList)
+                {
+                    if (!examNames.ContainsKey(exam.ID))
+                        examNames.Add(exam.ID, exam.Name);
+                }
+                foreach (AEIncludeRecord ae in aeList)
+                {
+                    if (!aeTable.ContainsKey(ae.RefAssessmentSetupID))
+                        aeTable.Add(ae.RefAssessmentSetupID, new List<string>());
+                    if (examNames.ContainsKey(ae.RefExamID))
+                        aeTable[ae.RefAssessmentSetupID].Add(examNames[ae.RefExamID]);
+                }
+                #endregion
+                #region 整理試別
+                foreach (ExamRecord exam in Exam.SelectAll())
+                {
+                    if (!_dicExam.ContainsKey(exam.ID))
+                        _dicExam.Add(exam.ID, exam.Name);
+                }
+                #endregion
                 #endregion
 
                 #region 進行驗證
@@ -258,7 +283,7 @@ namespace ExamScoreCardReaderV2
 
                 Dictionary<string, SCETakeRecord> sceList = new Dictionary<string, SCETakeRecord>();
                 FunctionSpliter<string, SCETakeRecord> spliterSCE = new FunctionSpliter<string, SCETakeRecord>(300, 3);
-                spliterSCE.Function = delegate(List<string> part)
+                spliterSCE.Function = delegate (List<string> part)
                 {
                     return SCETake.Select(null, null, null, null, part);
                 };
@@ -298,6 +323,28 @@ namespace ExamScoreCardReaderV2
 
                     foreach (CourseRecord course in courses)
                     {
+
+                        #region 確認課程有此試別
+                        if (string.IsNullOrEmpty(course.RefAssessmentSetupID))
+                            continue;//builder.AppendLine(string.Format("課程「{0}」沒有評量設定。", course.Name));
+                        else if (!aeTable.ContainsKey(course.RefAssessmentSetupID))
+                            continue;//builder.AppendLine(string.Format("課程「{0}」評量設定有誤。", course.Name));
+                        else
+                        {
+                            bool found = false;
+                            foreach (string examName in aeTable[course.RefAssessmentSetupID])
+                            {
+                                if (examName == dr.Exam)
+                                {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found)
+                                continue;//builder.AppendLine(string.Format("課程「{0}」沒有試別「{1}」。", course.Name, record.Exam));
+                        } 
+                        #endregion
+
                         string key = GetCombineKey(student.ID, course.ID, exam.ID);
 
                         if (sceList.ContainsKey(key))
@@ -406,7 +453,7 @@ namespace ExamScoreCardReaderV2
                 e.Result = null;
                 #endregion
             };
-            _worker.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e)
+            _worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
                 #region Worker Completed
                 if (e.Error == null && e.Result == null)
@@ -464,17 +511,9 @@ namespace ExamScoreCardReaderV2
 
             _warn = new BackgroundWorker();
             _warn.WorkerReportsProgress = true;
-            _warn.DoWork += delegate(object sender, DoWorkEventArgs e)
+            _warn.DoWork += delegate (object sender, DoWorkEventArgs e)
             {
                 _warn.ReportProgress(0, "產生警告訊息...");
-
-                examDict = new Dictionary<string, string>();
-                foreach (ExamRecord exam in Exam.SelectAll())
-                {
-                    if (!examDict.ContainsKey(exam.ID))
-                        examDict.Add(exam.ID, exam.Name);
-                }
-
                 WarningForm form = new WarningForm();
                 int count = 0;
                 foreach (SCETakeRecord sce in _existedScoreList)
@@ -489,7 +528,7 @@ namespace ExamScoreCardReaderV2
 
                     StudentRecord student = Student.SelectByID(sce.RefStudentID);
                     CourseRecord course = Course.SelectByID(sce.RefCourseID);
-                    string exam = (examDict.ContainsKey(sce.RefExamID) ? examDict[sce.RefExamID] : "<未知的試別>");
+                    string exam = (_dicExam.ContainsKey(sce.RefExamID) ? _dicExam[sce.RefExamID] : "<未知的試別>");
 
                     string s = "";
                     if (student.Class != null) s += student.Class.Name;
@@ -513,7 +552,7 @@ namespace ExamScoreCardReaderV2
 
                 e.Result = form;
             };
-            _warn.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e)
+            _warn.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
                 WarningForm form = e.Result as WarningForm;
 
@@ -529,7 +568,7 @@ namespace ExamScoreCardReaderV2
                     this.DialogResult = DialogResult.Cancel;
                 }
             };
-            _warn.ProgressChanged += delegate(object sender, ProgressChangedEventArgs e)
+            _warn.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
             {
                 FISCA.Presentation.MotherForm.SetStatusBarMessage("" + e.UserState, e.ProgressPercentage);
             };
@@ -538,7 +577,7 @@ namespace ExamScoreCardReaderV2
             _addScoreList = new List<SCETakeRecord>();
             _existedScoreList = new List<SCETakeRecord>();
             AddScoreDic = new Dictionary<string, SCETakeRecord>();
-            examDict = new Dictionary<string, string>();
+            _dicExam = new Dictionary<string, string>();
         }
 
         void _upload_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -838,7 +877,7 @@ namespace ExamScoreCardReaderV2
             {
                 StudentRecord student = Student.SelectByID(sce.RefStudentID);
                 CourseRecord course = Course.SelectByID(sce.RefCourseID);
-                string exam = (examDict.ContainsKey(sce.RefExamID) ? examDict[sce.RefExamID] : "<未知的試別>");
+                string exam = (_dicExam.ContainsKey(sce.RefExamID) ? _dicExam[sce.RefExamID] : "<未知的試別>");
 
                 if (delExistedOri.ContainsKey(sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID)
                     && delExistedOri[sce.RefStudentID + "_" + sce.RefCourseID + "_" + sce.RefExamID].GetScore() != null)

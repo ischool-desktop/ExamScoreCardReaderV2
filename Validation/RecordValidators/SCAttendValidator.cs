@@ -24,7 +24,7 @@ namespace ExamScoreCardReaderV2.Validation.RecordValidators
             foreach (CourseRecord course in _studentCourseInfo.GetCourses(record.StudentNumber))
                 subjects.Remove(course.Subject);
 
-            if (subjects.Count > 0)
+            if (subjects.Count == record.Subjects.Count)
             {
                 StringBuilder builder = new StringBuilder("");
                 foreach (string s in subjects)

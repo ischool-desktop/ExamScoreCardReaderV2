@@ -101,6 +101,8 @@ namespace ExamScoreCardReaderV2
 
         private void dgv_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
+            if (dgv.Rows[e.RowIndex].IsNewRow)
+                return;
             DataGridViewCell cell = dgv.Rows[e.RowIndex].Cells[e.ColumnIndex];
 
             if (cell.OwningColumn == chCode)
