@@ -347,6 +347,7 @@
     <Content Include="Library\K12.Presentation.xml" />
     <Content Include="Library\SmartSchool.ErrorReporting.dll" />
     <Content Include="Library\SmartSchool.ErrorReporting.xml" />
+    <Content Include="讀卡範例範例格式\惠文高級中學匯入讀卡測試%28好資料%29.txt" />
     <None Include="Resources\byte_add_64.png" />
     <None Include="Resources\設定.png" />
   </ItemGroup>
