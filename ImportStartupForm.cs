@@ -1132,23 +1132,27 @@ namespace ExamScoreCardReaderV2
                     {
                         XmlElement PScore = doc.CreateElement("PScore");
                         Extension_inner.AppendChild(PScore);
-                        PScore.InnerText = K12.Data.Decimal.GetString(0);
+                        //PScore.InnerText = K12.Data.Decimal.GetString(0);
                     }
 
+                    //擴充欄位值
                     XmlElement eleScore = Extension_inner.SelectSingleNode("Score") as XmlElement;
                     if (eleScore == null)
                     {
-                        XmlElement Score = doc.CreateElement("Score");
-                        Extension_inner.AppendChild(Score);
-                        Score.InnerText = K12.Data.Decimal.GetString(score + System.Decimal.Parse(Extension_inner.SelectSingleNode("PScore").InnerText));
+                        eleScore = doc.CreateElement("Score");
+                        Extension_inner.AppendChild(eleScore);
                     }
+                    decimal pScore = 0;
+                    if (!decimal.TryParse(Extension_inner.SelectSingleNode("PScore").InnerText, out pScore) && Extension_inner.SelectSingleNode("PScore").InnerText == "缺")
+                        eleScore.InnerText = "缺";
                     else
-                    {
-                        eleScore.InnerText = K12.Data.Decimal.GetString(score + System.Decimal.Parse(Extension_inner.SelectSingleNode("PScore").InnerText));
-                    }
+                        eleScore.InnerText = K12.Data.Decimal.GetString(score + pScore);
 
-
-                    element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
+                    //實體欄位值
+                    if (eleScore.InnerText == "缺")
+                        element.SelectSingleNode("Score").InnerText = "-1";
+                    else
+                        element.SelectSingleNode("Score").InnerText = Extension_inner.SelectSingleNode("Score").InnerText;
 
                 }
                 else
